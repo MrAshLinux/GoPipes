@@ -27,7 +27,6 @@ type Plumber interface {
 	AddProducer(p Producer)
 	AddConsumer(c Consumer)
 	Connect(producerName string, consumerName string) bool
-	AddAndConnect(p Producer, c Consumer)
 	Start()
 }
 
@@ -68,7 +67,9 @@ func (sp *SimplePlumber) Start() {
 		go sp.Producers[pName].Send(sp.Pipes[pName])
 		go sp.Consumers[cName].Consume(sp.Pipes[pName])
 	}
-	
+	go func() {
+		
+	}
 }
 
 
@@ -76,26 +77,26 @@ type IntFlow struct {
 	value int
 }
 
-func (i IntFlow) Get() int {
+func (i IntFlow) Get() interface{} {
 	return i.value
 }
 
-func (i *IntFlow) Set(val int) {
-	i.value = val
+func (i *IntFlow) Set(val interface{}) {
+	i.value = val.(int)
 }
 
 
 
 type IntProducer struct {
-	Data []int
 	Name string
 }
 func (ip IntProducer) Send(w chan Flowable)  {
-	for _, v := range ip.Data {
+	data := [10]int{1,2,3,4,5,6,7,8,9,10}
+	for _, v := range data {
 		fmt.Println("<Producer:%s> Sending %i",ip.GetName() ,v)
 		flow := IntFlow{}
 		flow.Set(v)
-		iflow := Flowable(flow)
+		iflow := Flowable(&flow)
 		w <- iflow
 	}
 	fmt.Println("<Producer:%s> Exiting", ip.GetName())
@@ -109,7 +110,7 @@ func (ip IntProducer) GetName() string {
 type IntConsumer struct {
 	Name string
 }
-func (ic *IntConsumer) Consume(w chan IntFlow) {
+func (ic *IntConsumer) Consume(w chan Flowable) {
 	select {
 	case flowVal := <- w:
 		fmt.Println("<Consumer:%s> Recived %i",ic ,flowVal.Get())
